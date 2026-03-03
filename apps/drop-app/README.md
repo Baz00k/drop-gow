@@ -45,6 +45,10 @@ env = ["DROP_SERVER_URL=https://your-server.example.com"]
 
 Upstream dependency updates (base image, drop-app releases) are detected weekly and proposed as PRs automatically.
 
+## Windows Games (Proton)
+
+Drop's `develop` branch has built-in [Proton/UMU support](https://github.com/Drop-OSS/drop-app/blob/develop/src-tauri/process/src/compat.rs) for running Windows games on Linux, but this is not yet included in the latest release (v0.3.4). Once a new version ships with compatibility layer support, this image will be updated to bundle `umu-run` and Proton.
+
 ## Rollback
 
 ```bash

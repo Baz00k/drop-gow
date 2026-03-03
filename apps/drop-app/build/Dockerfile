@@ -33,5 +33,9 @@ RUN mkdir -p /tmp/.X11-unix
 ENV XDG_RUNTIME_DIR=/tmp/.X11-unix
 ENV BROWSER=firefox
 
+# TODO: Once drop-app releases Proton/UMU support (currently on develop branch),
+# install umu-run and a Proton build for Windows game compatibility.
+# See: https://github.com/Drop-OSS/drop-app/blob/develop/src-tauri/process/src/compat.rs
+
 ARG IMAGE_SOURCE
 LABEL org.opencontainers.image.source=$IMAGE_SOURCE
