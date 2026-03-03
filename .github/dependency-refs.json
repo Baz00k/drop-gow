@@ -1,0 +1,12 @@
+{
+  "base_app": {
+    "image": "ghcr.io/games-on-whales/base-app",
+    "tag": "edge",
+    "digest": ""
+  },
+  "drop_app": {
+    "version": "v0.3.4",
+    "repo": "Drop-OSS/drop-app"
+  },
+  "last_checked": ""
+}
