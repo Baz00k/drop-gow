@@ -2,4 +2,4 @@
 set -e
 
 source /opt/gow/launch-comp.sh
-launcher /usr/bin/drop-desktop-client
+launcher /usr/bin/drop-app

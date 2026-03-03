@@ -54,7 +54,7 @@ check_file() {
 echo "=== Runtime Dependency Validation ==="
 echo ""
 
-check_binary "drop-desktop-client" "drop-desktop-client" || FAILED=1
+check_binary "drop-app" "drop-app" || FAILED=1
 
 check_library "libayatana-appindicator3" "libayatana-appindicator3" || FAILED=1
 check_library "libwebkit2gtk-4.1" "libwebkit2gtk-4.1" || FAILED=1
