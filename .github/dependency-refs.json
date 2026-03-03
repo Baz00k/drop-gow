@@ -6,6 +6,7 @@
   },
   "drop_app": {
     "version": "v0.3.4",
+    "sha256": "6473ced0769f64ec2c901f2718dda60c86ec4e09c4f89fbf6acfce1b0bb99d19",
     "repo": "Drop-OSS/drop-app"
   },
   "last_checked": ""

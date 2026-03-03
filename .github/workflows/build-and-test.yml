@@ -6,10 +6,12 @@ on:
         paths:
             - "apps/drop-app/**"
             - ".github/workflows/build-and-test.yml"
+            - ".github/dependency-refs.json"
     pull_request:
         paths:
             - "apps/drop-app/**"
             - ".github/workflows/build-and-test.yml"
+            - ".github/dependency-refs.json"
     workflow_dispatch:
 
 concurrency:
@@ -30,6 +32,14 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+
+            - name: Read dependency versions
+              id: deps
+              run: |
+                  DROP_APP_VERSION=$(jq -r '.drop_app.version | ltrimstr("v")' .github/dependency-refs.json)
+                  DROP_APP_SHA256=$(jq -r '.drop_app.sha256' .github/dependency-refs.json)
+                  echo "drop_app_version=$DROP_APP_VERSION" >> $GITHUB_OUTPUT
+                  echo "drop_app_sha256=$DROP_APP_SHA256" >> $GITHUB_OUTPUT
 
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
@@ -66,6 +76,8 @@ jobs:
                   build-args: |
                       BASE_APP_IMAGE=ghcr.io/games-on-whales/base-app:edge
                       IMAGE_SOURCE=${{ github.server_url }}/${{ github.repository }}
+                      DROP_APP_VERSION=${{ steps.deps.outputs.drop_app_version }}
+                      DROP_APP_SHA256=${{ steps.deps.outputs.drop_app_sha256 }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
 
@@ -86,6 +98,8 @@ jobs:
                   build-args: |
                       BASE_APP_IMAGE=ghcr.io/games-on-whales/base-app:edge
                       IMAGE_SOURCE=${{ github.server_url }}/${{ github.repository }}
+                      DROP_APP_VERSION=${{ steps.deps.outputs.drop_app_version }}
+                      DROP_APP_SHA256=${{ steps.deps.outputs.drop_app_sha256 }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
 

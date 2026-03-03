@@ -60,15 +60,10 @@ jobs:
                     echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
 
                     # Update dependency-refs.json
-                    jq --arg version "$LATEST_VERSION" '.drop_app.version = $version' .github/dependency-refs.json > /tmp/refs.json
+                    jq --arg version "$LATEST_VERSION" --arg sha256 "$NEW_SHA256" \
+                      '.drop_app.version = $version | .drop_app.sha256 = $sha256' \
+                      .github/dependency-refs.json > /tmp/refs.json
                     mv /tmp/refs.json .github/dependency-refs.json
-
-                    # Update Dockerfile version and checksum
-                    sed -i "s/^ARG DROP_APP_VERSION=.*/ARG DROP_APP_VERSION=${VERSION_NUM}/" apps/drop-app/build/Dockerfile
-                    sed -i "s/^ARG DROP_APP_SHA256=.*/ARG DROP_APP_SHA256=${NEW_SHA256}/" apps/drop-app/build/Dockerfile
-
-                    # Update checksum file
-                    echo "${NEW_SHA256}  Drop.Desktop.Client_${VERSION_NUM}_amd64.deb" > apps/drop-app/build/checksums/drop-app-${VERSION_NUM}-amd64.sha256
                   else
                     echo "drift=false" >> $GITHUB_OUTPUT
                   fi
