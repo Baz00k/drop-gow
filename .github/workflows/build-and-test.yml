@@ -67,7 +67,7 @@ jobs:
 
             - name: Run dependency validation
               run: |
-                  docker run --rm drop-app:test /opt/gow/validate-deps.sh
+                  docker run --rm --entrypoint /opt/gow/validate-deps.sh drop-app:test
 
             - name: Push image
               id: push

@@ -27,6 +27,7 @@ _INSTALL_DROP_APP
 COPY --chmod=777 scripts/startup.sh /opt/gow/startup-app.sh
 COPY --chmod=777 scripts/validate-deps.sh /opt/gow/validate-deps.sh
 
+RUN mkdir -p /tmp/.X11-unix
 ENV XDG_RUNTIME_DIR=/tmp/.X11-unix
 
 ARG IMAGE_SOURCE
