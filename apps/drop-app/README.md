@@ -25,6 +25,7 @@ Example `apps.toml` entry:
 ```toml
 [apps.drop]
 title = "Drop"
+icon_png_path = "https://raw.githubusercontent.com/Drop-OSS/drop-app/develop/src-tauri/icons/icon.png"
 start_virtual_compositor = true
 
 [apps.drop.runner]
