@@ -14,7 +14,9 @@ set -e
 apt-get update
 apt-get install -y --no-install-recommends \
     libayatana-appindicator3-1 \
-    libwebkit2gtk-4.1-0
+    libwebkit2gtk-4.1-0 \
+    firefox \
+    xdg-utils
 curl -fsSL -o /tmp/drop-desktop-client.deb \
     "https://github.com/Drop-OSS/drop-app/releases/download/v${DROP_APP_VERSION}/Drop.Desktop.Client_${DROP_APP_VERSION}_amd64.deb"
 echo "${DROP_APP_SHA256}  /tmp/drop-desktop-client.deb" | sha256sum -c -
