@@ -1,94 +1,94 @@
 name: Dependency Drift Check
 
 on:
-  schedule:
-    - cron: '0 6 * * 1'
-  workflow_dispatch:
+    schedule:
+        - cron: "0 6 * * 1"
+    workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+    contents: write
+    pull-requests: write
 
 jobs:
-  check-drift:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    check-drift:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Check base image drift
-        id: base-check
-        run: |
-          CURRENT_DIGEST=$(docker manifest inspect ghcr.io/games-on-whales/base-app:edge 2>/dev/null | jq -r '.digest // empty') || true
-          STORED_DIGEST=$(jq -r '.base_app.digest // empty' .github/dependency-refs.json)
-          
-          if [ -n "$CURRENT_DIGEST" ] && [ "$CURRENT_DIGEST" != "$STORED_DIGEST" ]; then
-            echo "drift=true" >> $GITHUB_OUTPUT
-            echo "current_digest=$CURRENT_DIGEST" >> $GITHUB_OUTPUT
-            # Update dependency-refs.json
-            jq --arg digest "$CURRENT_DIGEST" '.base_app.digest = $digest' .github/dependency-refs.json > /tmp/refs.json
-            mv /tmp/refs.json .github/dependency-refs.json
-          else
-            echo "drift=false" >> $GITHUB_OUTPUT
-          fi
+            - name: Check base image drift
+              id: base-check
+              run: |
+                  CURRENT_DIGEST=$(docker manifest inspect ghcr.io/games-on-whales/base-app:edge 2>/dev/null | jq -r '.digest // empty') || true
+                  STORED_DIGEST=$(jq -r '.base_app.digest // empty' .github/dependency-refs.json)
 
-      - name: Check drop-app release drift
-        id: drop-check
-        run: |
-          LATEST_VERSION=$(curl -fsSL https://api.github.com/repos/Drop-OSS/drop-app/releases/latest | jq -r '.tag_name // empty') || true
-          STORED_VERSION=$(jq -r '.drop_app.version // empty' .github/dependency-refs.json)
-          
-          if [ -n "$LATEST_VERSION" ] && [ "$LATEST_VERSION" != "$STORED_VERSION" ]; then
-            echo "drift=true" >> $GITHUB_OUTPUT
-            echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-            echo "stored_version=$STORED_VERSION" >> $GITHUB_OUTPUT
-            
-            # Strip the leading 'v' for the version number used in filenames
-            VERSION_NUM="${LATEST_VERSION#v}"
-            
-            # Download new .deb and compute checksum
-            curl -fsSL -o /tmp/drop-desktop-client.deb \
-              "https://github.com/Drop-OSS/drop-app/releases/download/${LATEST_VERSION}/Drop.Desktop.Client_${VERSION_NUM}_amd64.deb"
-            NEW_SHA256=$(sha256sum /tmp/drop-desktop-client.deb | awk '{print $1}')
-            rm -f /tmp/drop-desktop-client.deb
-            
-            echo "new_sha256=$NEW_SHA256" >> $GITHUB_OUTPUT
-            echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
-            
-            # Update dependency-refs.json
-            jq --arg version "$LATEST_VERSION" '.drop_app.version = $version' .github/dependency-refs.json > /tmp/refs.json
-            mv /tmp/refs.json .github/dependency-refs.json
-            
-            # Update Dockerfile version and checksum
-            sed -i "s/^ARG DROP_APP_VERSION=.*/ARG DROP_APP_VERSION=${VERSION_NUM}/" apps/drop-app/build/Dockerfile
-            sed -i "s/^ARG DROP_APP_SHA256=.*/ARG DROP_APP_SHA256=${NEW_SHA256}/" apps/drop-app/build/Dockerfile
-            
-            # Update checksum file
-            echo "${NEW_SHA256}  Drop.Desktop.Client_${VERSION_NUM}_amd64.deb" > apps/drop-app/build/checksums/drop-app-${VERSION_NUM}-amd64.sha256
-          else
-            echo "drift=false" >> $GITHUB_OUTPUT
-          fi
+                  if [ -n "$CURRENT_DIGEST" ] && [ "$CURRENT_DIGEST" != "$STORED_DIGEST" ]; then
+                    echo "drift=true" >> $GITHUB_OUTPUT
+                    echo "current_digest=$CURRENT_DIGEST" >> $GITHUB_OUTPUT
+                    # Update dependency-refs.json
+                    jq --arg digest "$CURRENT_DIGEST" '.base_app.digest = $digest' .github/dependency-refs.json > /tmp/refs.json
+                    mv /tmp/refs.json .github/dependency-refs.json
+                  else
+                    echo "drift=false" >> $GITHUB_OUTPUT
+                  fi
 
-      - name: Update last_checked timestamp
-        if: steps.base-check.outputs.drift == 'true' || steps.drop-check.outputs.drift == 'true'
-        run: |
-          jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.last_checked = $ts' .github/dependency-refs.json > /tmp/refs.json
-          mv /tmp/refs.json .github/dependency-refs.json
+            - name: Check drop-app release drift
+              id: drop-check
+              run: |
+                  LATEST_VERSION=$(curl -fsSL https://api.github.com/repos/Drop-OSS/drop-app/releases/latest | jq -r '.tag_name // empty') || true
+                  STORED_VERSION=$(jq -r '.drop_app.version // empty' .github/dependency-refs.json)
 
-      - name: Create pull request
-        if: steps.base-check.outputs.drift == 'true' || steps.drop-check.outputs.drift == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore(deps): update upstream dependencies"
-          title: "[Dependencies] Update upstream dependencies"
-          body: |
-            ## Automated Dependency Update
-            
-            ${{ steps.base-check.outputs.drift == 'true' && format('### Base Image (base-app:edge)\nDigest updated to `{0}`\n', steps.base-check.outputs.current_digest) || '' }}
-            ${{ steps.drop-check.outputs.drift == 'true' && format('### Drop-App\nUpdated from `{0}` to `{1}`\nNew SHA256: `{2}`\n', steps.drop-check.outputs.stored_version || 'unknown', steps.drop-check.outputs.latest_version, steps.drop-check.outputs.new_sha256) || '' }}
-            
-            Review the changes and merge to trigger a rebuild.
-          branch: deps/auto-update
-          labels: dependencies,automated
-          delete-branch: true
+                  if [ -n "$LATEST_VERSION" ] && [ "$LATEST_VERSION" != "$STORED_VERSION" ]; then
+                    echo "drift=true" >> $GITHUB_OUTPUT
+                    echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+                    echo "stored_version=$STORED_VERSION" >> $GITHUB_OUTPUT
+
+                    # Strip the leading 'v' for the version number used in filenames
+                    VERSION_NUM="${LATEST_VERSION#v}"
+
+                    # Download new .deb and compute checksum
+                    curl -fsSL -o /tmp/drop-desktop-client.deb \
+                      "https://github.com/Drop-OSS/drop-app/releases/download/${LATEST_VERSION}/Drop.Desktop.Client_${VERSION_NUM}_amd64.deb"
+                    NEW_SHA256=$(sha256sum /tmp/drop-desktop-client.deb | awk '{print $1}')
+                    rm -f /tmp/drop-desktop-client.deb
+
+                    echo "new_sha256=$NEW_SHA256" >> $GITHUB_OUTPUT
+                    echo "version_num=$VERSION_NUM" >> $GITHUB_OUTPUT
+
+                    # Update dependency-refs.json
+                    jq --arg version "$LATEST_VERSION" '.drop_app.version = $version' .github/dependency-refs.json > /tmp/refs.json
+                    mv /tmp/refs.json .github/dependency-refs.json
+
+                    # Update Dockerfile version and checksum
+                    sed -i "s/^ARG DROP_APP_VERSION=.*/ARG DROP_APP_VERSION=${VERSION_NUM}/" apps/drop-app/build/Dockerfile
+                    sed -i "s/^ARG DROP_APP_SHA256=.*/ARG DROP_APP_SHA256=${NEW_SHA256}/" apps/drop-app/build/Dockerfile
+
+                    # Update checksum file
+                    echo "${NEW_SHA256}  Drop.Desktop.Client_${VERSION_NUM}_amd64.deb" > apps/drop-app/build/checksums/drop-app-${VERSION_NUM}-amd64.sha256
+                  else
+                    echo "drift=false" >> $GITHUB_OUTPUT
+                  fi
+
+            - name: Update last_checked timestamp
+              if: steps.base-check.outputs.drift == 'true' || steps.drop-check.outputs.drift == 'true'
+              run: |
+                  jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.last_checked = $ts' .github/dependency-refs.json > /tmp/refs.json
+                  mv /tmp/refs.json .github/dependency-refs.json
+
+            - name: Create pull request
+              if: steps.base-check.outputs.drift == 'true' || steps.drop-check.outputs.drift == 'true'
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  commit-message: "chore(deps): update upstream dependencies"
+                  title: "[Dependencies] Update upstream dependencies"
+                  body: |
+                      ## Automated Dependency Update
+
+                      ${{ steps.base-check.outputs.drift == 'true' && format('### Base Image (base-app:edge)\nDigest updated to `{0}`\n', steps.base-check.outputs.current_digest) || '' }}
+                      ${{ steps.drop-check.outputs.drift == 'true' && format('### Drop-App\nUpdated from `{0}` to `{1}`\nNew SHA256: `{2}`\n', steps.drop-check.outputs.stored_version || 'unknown', steps.drop-check.outputs.latest_version, steps.drop-check.outputs.new_sha256) || '' }}
+
+                      Review the changes and merge to trigger a rebuild.
+                  branch: deps/auto-update
+                  labels: dependencies,automated
+                  delete-branch: true
