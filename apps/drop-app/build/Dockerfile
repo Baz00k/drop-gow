@@ -31,6 +31,7 @@ COPY --chmod=777 scripts/validate-deps.sh /opt/gow/validate-deps.sh
 
 RUN mkdir -p /tmp/.X11-unix
 ENV XDG_RUNTIME_DIR=/tmp/.X11-unix
+ENV BROWSER=firefox
 
 ARG IMAGE_SOURCE
 LABEL org.opencontainers.image.source=$IMAGE_SOURCE
