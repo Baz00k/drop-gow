@@ -8,13 +8,18 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG DROP_APP_VERSION
 ARG DROP_APP_SHA256
 
-# hadolint ignore=DL3008
+# hadolint ignore=DL3008,DL3015
 RUN <<_INSTALL_DROP_APP
 set -e
-# Add Mozilla's official APT repository for real Firefox .deb (not snap stub)
+# Remove the Ubuntu snap stub for Firefox (doesn't work in Docker)
+apt-get update
+apt-get remove -y firefox 2>/dev/null || true
+# Add Mozilla's official APT repository for real Firefox .deb
 install -d -m 0755 /etc/apt/keyrings
 curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg -o /etc/apt/keyrings/mozilla.asc
 echo "deb [signed-by=/etc/apt/keyrings/mozilla.asc] https://packages.mozilla.org/apt mozilla main" > /etc/apt/sources.list.d/mozilla.list
+# Pin Mozilla repo so its Firefox always wins over the Ubuntu snap stub
+printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' > /etc/apt/preferences.d/mozilla
 apt-get update
 apt-get install -y --no-install-recommends \
     libayatana-appindicator3-1 \
