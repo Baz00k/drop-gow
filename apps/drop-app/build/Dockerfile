@@ -42,4 +42,8 @@ ENV BROWSER=firefox
 # See: https://github.com/Drop-OSS/drop-app/blob/develop/src-tauri/process/src/compat.rs
 
 ARG IMAGE_SOURCE
+
+LABEL org.opencontainers.image.title="Drop App for Games on Whales"
+LABEL org.opencontainers.image.description="Drop desktop client for cloud gaming via Games on Whales/Wolf"
+LABEL org.opencontainers.image.authors="Baz00k"
 LABEL org.opencontainers.image.source=$IMAGE_SOURCE
